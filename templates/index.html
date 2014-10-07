@@ -1,0 +1,103 @@
+<html>
+<head>
+<title>PyPI Rankings</title>
+<link rel="shortcut icon" href="{{url_for('static', filename='python_logo.png') }}">
+<script src="{{url_for('static', filename='jquery.js') }}"></script>
+<script src="{{url_for('static', filename='jquery.dataTables.min.js') }}"></script>
+<script src="{{url_for('static', filename='spinner.factory.js') }}"></script>
+<script src="{{url_for('static', filename='jquery.blockUI.js') }}"></script>
+<script src="{{url_for('static', filename='jquery.blockUI-custom-settings.js') }}"></script>
+<script src="{{url_for('static', filename='spin.min.js') }}"></script>
+<link rel="stylesheet" type="text/css" href="{{url_for('static', filename='main.css') }}" />
+<link rel="stylesheet" type="text/css" href="{{url_for('static', filename='solarized.css') }}" />
+
+<script>
+function updateQueryStringParameter(uri, key, value) {
+  var re = new RegExp("([?&])" + key + "=.*?(&|$)", "i");
+  var separator = uri.indexOf('?') !== -1 ? "&" : "?";
+  if (uri.match(re)) {
+    return uri.replace(re, '$1' + key + "=" + value + '$2');
+  }
+  else {
+    return uri + separator + key + "=" + value;
+  }
+}
+
+var table;
+
+$(document).ready(function() {
+    $('#main_table').on("processing.dt", function(event, settings, processing) {
+        if (processing) {
+            spinnerFactory.block(settings.oInstance, "huge");
+        } else {
+            settings.oInstance.unblock();
+            // TODO processing=True gets called twice on init for some reason, so we unblock twice...
+            settings.oInstance.unblock();
+        }
+    });
+    table = $('#main_table').DataTable( {
+        sort: false,
+        serverSide: true,
+        {% if length %}pageLength: {{ length }},{% endif %}
+        {% if start %}displayStart: {{ start }},{% endif %}
+        {% if search %}search: {search: "{{ search }}"},{% endif %}
+        ajax: '/{{ source }}'
+    } ).on("length.dt", function(e, settings, len) {
+        var new_url = updateQueryStringParameter(window.location.href, "length", len);
+        window.history.replaceState("", "", new_url);
+    }).on("page.dt", function() {
+        var new_url = updateQueryStringParameter(window.location.href, "start", table.page.info().start);
+        window.history.replaceState("", "", new_url);
+    }).on("search.dt", function() {
+        var new_url = updateQueryStringParameter(window.location.href, "search", table.search());
+        new_url = updateQueryStringParameter(new_url, "start", 0);
+        window.history.replaceState("", "", new_url);
+    });
+});
+function change_table_data() {
+    var new_ajax_source;
+    $("input[name=selected-value]").each(function(i, sel) {
+        if ($(sel).prop("checked"))
+            new_ajax_source = $(sel).attr("id");
+    });
+    if (new_ajax_source.indexOf("dependencies") >= 0 || new_ajax_source.indexOf("authors") >= 0) {
+        $("#main_table th")[2].innerHTML = "Count";
+    } else {
+        $("#main_table th")[2].innerHTML = "Downloads";
+    }
+    $('#main_table').DataTable().ajax.url("/" + new_ajax_source).load()
+    var new_url = updateQueryStringParameter(window.location.href, "source", new_ajax_source);
+    new_url = updateQueryStringParameter(new_url, "start", 0);
+    window.history.replaceState("", "", new_url);
+}
+</script>
+</head>
+<body class="index">
+<div class="banner">
+    <a href="/">
+    <img src="{{url_for('static', filename='logo.png') }}">
+    <h1>INFINIDAT PYPI RANKINGS</h1>
+    </a>
+</div>
+<table id="main_table">
+    <thead>
+    <th>Rank</th>
+    <th>Name</th>
+    {% if source in ["dependencies", "authors"] %}<th>Count</th>{% else %}<th>Downloads</th>{% endif %}
+    <th></th>
+    </thead>
+</table>
+<div class="sidebar">
+<br>Sort by:<br>
+<input type="radio" onclick="javascript:change_table_data();" name="selected-value" id="downloads_total"{% if source=="downloads_total" %} checked="true"{% endif %}>Downloads Total</input><br>
+<input type="radio" onclick="javascript:change_table_data();" name="selected-value" id="downloads_monthly"{% if source=="downloads_monthly" %} checked="true"{% endif %}>Downloads Last Month</input><br>
+<input type="radio" onclick="javascript:change_table_data();" name="selected-value" id="downloads_weekly"{% if source=="downloads_weekly" %} checked="true"{% endif %}>Downloads Last Week</input><br>
+<input type="radio" onclick="javascript:change_table_data();" name="selected-value" id="downloads_daily"{% if source=="downloads_daily" %} checked="true"{% endif %}>Downloads Last Day</input><br>
+<input type="radio" onclick="javascript:change_table_data();" name="selected-value" id="dependencies"{% if source=="dependencies" %} checked="true"{% endif %}># of Dependent Packages</input><br>
+<input type="radio" onclick="javascript:change_table_data();" name="selected-value" id="authors"{% if source=="authors" %} checked="true"{% endif %}>Author by number of packages</input>
+<br><br>
+<a href="/more_stats">More Stats</a>
+</div>
+<div style="clear: both"></div>
+</body>
+</html>

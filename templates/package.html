@@ -1,0 +1,72 @@
+<html>
+<head>
+<title>PyPI Package Information</title>
+<script src="{{url_for('static', filename='jquery.js') }}"></script>
+<link rel="shortcut icon" href="http://pypi-ranking.info/static//img/python_logo.png">
+<link rel="stylesheet" type="text/css" href="{{url_for('static', filename='main.css') }}" />
+<link rel="stylesheet" type="text/css" href="{{url_for('static', filename='solarized.css') }}" />
+</head>
+<body class="subpage">
+<div class="banner">
+    <a href="/">
+    <img src="{{url_for('static', filename='logo.png') }}">
+    <h1>INFINIDAT PYPI RANKINGS</h1>
+    </a>
+</div>
+<table class="package">
+<tr><td>
+<b>Package Name</b>: {{ name }}
+</td></tr><tr><td>
+<b>Description</b>: {{ summary }}
+</td></tr><tr><td>
+<b>Downlods Total</b>: {{ "{:,d}".format(downloads_total) }}
+</td></tr><tr><td>
+<b>Packages {{ name }} depends on</b>:
+{% if not has_dependency_data %}
+N/A
+{% elif len(dependencies) == 0 %}
+None
+{% else %}
+<table>
+{% for dependency in dependencies %}
+<tr><td><a href="/package/{{ dependency }}">{{ dependency }}</a></td></tr>
+{% endfor %}
+</table>
+{% endif %}
+</td></tr><tr><td>
+<b>Packages that depend on {{ name }}</b>:
+{% if len(dependent_packages) == 0 %}
+None
+{% else %}
+<table>
+{% for dependency in dependent_packages %}
+<tr><td>
+{% if not dependency.startswith("...") %}<a href="/package/{{ dependency }}">{{ dependency }}</a>
+{% else %}<a href="/package/{{name}}?show_all=True">{{ dependency }}</a>{% endif %}
+</td></tr>
+{% endfor %}
+</table>
+{% endif %}
+</td></tr><tr><td>
+<b>Last Crawled</b>: {{ last_update }}
+</td></tr><tr><td>
+<b>Rank</b>: {{ rank }}
+</td></tr><tr><td>
+<b>Author</b>: <a href="/author/{{author}}">{{ author }}</a>
+</td></tr><tr><td>
+<b>Release History</b>:
+<table class="subtable">
+<thead>
+<th>Release</th>
+<th>Upload Time</th>
+<th>Downloads</th>
+</thead>
+{% for release in release_history %}
+<tr>
+<td>{{ release[1] }}</td><td>{{ format_time(release[2]) }}</td><td>{{ "{:,d}".format(release[3]) }}</td>
+</tr>
+{% endfor %}
+</table>
+</td></tr></table>
+</body>
+</html>

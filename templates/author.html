@@ -1,0 +1,32 @@
+<html>
+<head>
+<title>PyPI Author Information</title>
+<script src="{{url_for('static', filename='jquery.js') }}"></script>
+<link rel="shortcut icon" href="http://pypi-ranking.info/static//img/python_logo.png">
+<link rel="stylesheet" type="text/css" href="{{url_for('static', filename='main.css') }}" />
+<link rel="stylesheet" type="text/css" href="{{url_for('static', filename='solarized.css') }}" />
+</head>
+<body class="subpage">
+<div class="banner">
+    <a href="/">
+    <img src="{{url_for('static', filename='logo.png') }}">
+    <h1>INFINIDAT PYPI RANKINGS</h1>
+    </a>
+</div>
+<table class="package">
+<tr><td>
+<b>Author Name</b>: {{ author_name }}
+</td></tr><tr><td>
+<b>Packages Authored</b>: {{ "{:,d}".format(len(packages)) }}
+</td></tr><tr><td>
+<b>Rank</b>: {{ rank }}
+</td></tr><tr><td>
+<b>Packages by this author</b>:
+<table class="subtable">
+{% for package in packages %}
+<tr><td><a href="/package/{{package}}">{{ package }}</a></td></tr>
+{% endfor %}
+</table>
+</td></tr></table>
+</body>
+</html>
