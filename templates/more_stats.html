@@ -15,7 +15,11 @@
 </div>
 <table class="package">
 <tr><td>
-<b>Number of packages total in PyPI</b>: {{ "{:,}".format(total_len) }}
+<b>Total packages in PyPI</b>: {{ "{:,}".format(total_len) }}
+</td></tr><tr><td>
+<b>Number of authors</b>: {{ "{:,}".format(authors_len) }}
+</td></tr><tr><td>
+<b>Packages Supporting Python 3</b>: {{ "{:,}".format(len_py3) }} ({{ "{:.2f}".format(len_py3 / total_len * 100) }}%)
 </td></tr><tr><td>
 <b>SCM Distribution</b>
 <table>
@@ -25,15 +29,15 @@
 {% endfor %}
 </table>
 </td></tr><tr><td>
-<b>Packages Supporting Python 3</b>: {{ "{:,}".format(len_py3) }} ({{ "{:.2f}".format(len_py3 / total_len * 100) }}%)
-</td></tr><tr><td>
 <b>Packages with no releases</b>: {{ "{:,}".format(no_releases) }}
 </td></tr><tr><td>
 <b>Packages with releases but no distributions (0 downloads)</b>: {{ "{:,}".format(no_downloads) }}
 </td></tr><tr><td>
 <b>Packages with no source distribution</b>: {{ "{:,}".format(no_sdist) }}
 </td></tr><tr><td>
-<b>Packages for which dependencies could not be parsed</b>: {{ "{:,}".format((total_len - dependency_data)) }} ({{ "{:.2f}".format((total_len - dependency_data) / total_len * 100) }}%)
+<b>Packages with no dependency data</b>: {{ "{:,}".format((total_len - dependency_data)) }} ({{ "{:.2f}".format((total_len - dependency_data) / total_len * 100) }}%)
+</td></tr><tr><td>
+<b>Packages with SCM data</b>: {{ "{:,}".format(len_scm) }} ({{ "{:.2f}".format(len_scm / total_len * 100) }}%)
 </td></tr></table>
 </body>
 </html>

@@ -68,20 +68,23 @@ def authors():
 
 @app.route("/more_stats")
 def more_stats():
-    homepages = [x[0] for x in conn.execute("SELECT homepage FROM packages WHERE homepage IS NOT NULL")]
     scm = list()
-    for scm_name, scm_url_pattern in [("Github", "github.com"), ("Sourceforge", "sourceforge.net"),
-                                      ("Google Code", "code.google.com"), ("Bitbucket", "bitbucket")]:
-        scm.append((scm_name, len([h for h in homepages if h is not None and scm_url_pattern in h.lower()])))
+    for scm_name, scm_url_pattern in [("Github", "%github.%"), ("Sourceforge", "%sourceforge.net%"),
+                                      ("Google Code", "%code.google.com%"), ("Bitbucket", "%bitbucket%")]:
+        count = next(conn.execute("SELECT COUNT(*) FROM packages WHERE LOWER(homepage) LIKE ?", (scm_url_pattern,)))[0]
+        scm.append((scm_name, count))
     scm.sort(key=lambda x: x[1], reverse=True)
     len_py3 = [x[0] for x in conn.execute("SELECT python3 FROM packages")].count(True)
+    authors_len = next(conn.execute("SELECT COUNT(DISTINCT author) FROM packages"))[0]
     no_releases = len(list(conn.execute("SELECT homepage FROM packages WHERE homepage IS NULL")))
     no_downloads = [x[0] for x in conn.execute("SELECT downloads_total FROM packages")].count(0)
     dependency_data = next(conn.execute("SELECT count(*) FROM dependencies WHERE raw_dependencies IS NOT NULL"))[0]
     total_len = next(conn.execute("SELECT COUNT(*) FROM packages"))[0]
     no_sdist = next(conn.execute("SELECT COUNT(*) FROM packages WHERE latest_sdist IS NULL"))[0]
+    len_scm = next(conn.execute("SELECT COUNT(*) FROM scm"))[0]
     return render_template("more_stats.html", scm=scm, len_py3=len_py3, total_len=total_len, no_sdist=no_sdist,
-        no_releases=no_releases, no_downloads=no_downloads, dependency_data=dependency_data)
+        no_releases=no_releases, no_downloads=no_downloads, dependency_data=dependency_data,
+        len_scm=len_scm, authors_len=authors_len)
 
 @app.route('/package/<package_name>')
 def package(package_name):
@@ -100,6 +103,7 @@ def package(package_name):
     has_dependency_data = len(list(conn.execute("SELECT raw_dependencies FROM dependencies "
                                                 "WHERE name=? AND raw_dependencies IS NOT NULL", (package_name,)))) > 0
     show_all_packages = bool(request.args.get('show_all'))
+    scm = list(conn.execute("SELECT * FROM scm WHERE name=?", (package_name,)))
     def dependent_packages():
         res = list(conn.execute("SELECT name FROM dependencies WHERE dependency=?", (package_name,)))
         res = [x[0] for x in res]
@@ -110,7 +114,7 @@ def package(package_name):
     return render_template("package.html",
         last_update=last_update, rank=rank, format_time=format_time,
         has_dependency_data=has_dependency_data, dependencies=dependencies, dependent_packages=dependent_packages(),
-        len=len, release_history=versions,
+        len=len, release_history=versions, scm=scm,
         **package_data)
 
 @app.route('/author/<author_name>')

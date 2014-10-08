@@ -3,6 +3,7 @@ import setuptools, distutils.core, mock
 import os
 import sys
 import shutil
+import subprocess
 
 required = None
 def setup_mock(*args, **kwargs):
@@ -27,7 +28,8 @@ with mock.patch.object(setuptools, "setup", setup_mock), \
      mock.patch.object(os, "rename"), \
      mock.patch.object(os, "remove"), \
      mock.patch.object(shutil, "rmtree"), \
-     mock.patch.object(shutil, "move"):
+     mock.patch.object(shutil, "move"), \
+     mock.patch.object(subprocess, "Popen"):
         execfile("setup.py")
 
 print

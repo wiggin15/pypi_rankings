@@ -15,7 +15,7 @@
 </div>
 <table class="package">
 <tr><td>
-<b>Package Name</b>: {{ name }}
+<b>Package Name</b>: {{ name }} (<a href="http://pypi.python.org/pypi/{{ name }}">Show in PyPI</a>)
 </td></tr><tr><td>
 <b>Description</b>: {{ summary }}
 </td></tr><tr><td>
@@ -67,6 +67,16 @@ None
 </tr>
 {% endfor %}
 </table>
+{% if len(scm) > 0 %}
+<br>
+<b>SCM Data</b>:
+<table class="subtable">
+<tr><td>type</td><td>{{ scm[0][1].capitalize() }} (<a href={{scm[0][2]}}>link</a>)</td></tr>
+<tr><td># of open issues</td><td>{{ scm[0][3] }}</td></tr>
+<tr><td>last update</td><td>{{ scm[0][4].split("T")[0] }}</td></tr>
+</tr>
+</table>
+{% endif %}
 </td></tr></table>
 </body>
 </html>

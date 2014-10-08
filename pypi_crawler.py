@@ -115,8 +115,10 @@ def get_conn():
         conn.execute("CREATE TABLE packages ({})".format(", ".join([" ".join(item) for item in TABLE_VALUES.items()])))
         conn.execute("CREATE TABLE versions(package TEXT, version TEXT, upload_time TEXT, downloads INTEGER, "
             "CONSTRAINT u1 UNIQUE (package, version))")
-        conn.execute("CREATE TABLE dependencies(name TEXT, raw_dependencies TEXT, dependency TEXT, "
+        conn.execute("CREATE TABLE dependencies(name TEXT, raw_dependencies TEXT, dependency TEXT, crawl_time REAL, "
             "CONSTRAINT u2 UNIQUE (name, raw_dependencies), CONSTRAINT u3 UNIQUE (name, dependency))")
+        conn.execute("CREATE TABLE scm(name TEXT UNIQUE NOT NULL PRIMARY KEY, "
+            "type TEXT, url TEXT, open_issues INTEGER, last_change TEXT, crawl_time REAL)")
     return conn
 
 def remove_deleted_packages(conn, packages_in_db, packages_in_pypi):
@@ -124,6 +126,7 @@ def remove_deleted_packages(conn, packages_in_db, packages_in_pypi):
         conn.execute("DELETE FROM packages WHERE name=?", (package,))
         conn.execute("DELETE FROM versions WHERE package=?", (package,))
         conn.execute("DELETE FROM dependencies WHERE name=?", (package,))
+        conn.execute("DELETE FROM scm WHERE name=?", (package,))
     conn.commit()
 
 def crawl(conn, crawl_count):

@@ -5,8 +5,9 @@ import shutil
 import tarfile
 import zipfile
 import sqlite3
+import time
 from urllib import urlretrieve
-from infi.execute import execute_assert_success, CommandTimeout
+from infi.execute import execute_assert_success
 import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir)))
 import pypi_crawler
@@ -36,9 +37,8 @@ def get_dependencies(url):
         shutil.copy("setup_executor.py", new_dirs[0])
         os.chdir(new_dirs[0])
         try:
-            output = execute_assert_success(["python", "setup_executor.py"], timeout=60).get_stdout().strip()
+            output = execute_assert_success(["python", "setup_executor.py"], timeout=60*5).get_stdout().strip()
             res = eval(output.splitlines()[-1])
-            #print res
             return res
         finally:
             os.chdir(old_dir)
@@ -51,17 +51,14 @@ def per_package(package, url):
         return get_dependencies(url)
     except IndexError, ValueError:
         return None
-    except CommandTimeout:
-        print "TIMEOUT", package
-        return None
     except Exception as e:
         #print "ERROR", package, e
         return None
 
 def save_package_data(conn, package, dependencies, real_package_lookup):
     conn.execute("DELETE FROM dependencies WHERE name=?", (package,))       # remove old data
-    conn.execute("REPLACE INTO dependencies(name, raw_dependencies) VALUES (?, ?)",
-        (package, json.dumps(dependencies) if dependencies is not None else None,))
+    conn.execute("REPLACE INTO dependencies(name, raw_dependencies, crawl_time) VALUES (?, ?, ?)",
+        (package, json.dumps(dependencies) if dependencies is not None else None, time.time()))
     if dependencies is not None:
         for dependency in dependencies:
             if isinstance(dependency, basestring) and len(dependency) > 0:
