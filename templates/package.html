@@ -10,7 +10,7 @@
 <div class="banner">
     <a href="/">
     <img src="{{url_for('static', filename='logo.png') }}">
-    <h1>INFINIDAT PYPI RANKINGS</h1>
+    <h1>PYPI RANKINGS</h1>
     </a>
 </div>
 <table class="package">
@@ -21,13 +21,17 @@
 </td></tr><tr><td>
 <b>Downlods Total</b>: {{ "{:,d}".format(downloads_total) }}
 </td></tr><tr><td>
+<b>Rank</b>: {{ rank }}
+</td></tr><tr><td>
+<b>Author</b>: <a href="/author/{{author}}">{{ author }}</a>
+</td></tr><tr><td>
 <b>Packages {{ name }} depends on</b>:
 {% if not has_dependency_data %}
 N/A
 {% elif len(dependencies) == 0 %}
 None
 {% else %}
-<table>
+<table class="subtable">
 {% for dependency in dependencies %}
 <tr><td><a href="/package/{{ dependency }}">{{ dependency }}</a></td></tr>
 {% endfor %}
@@ -38,7 +42,7 @@ None
 {% if len(dependent_packages) == 0 %}
 None
 {% else %}
-<table>
+<table class="subtable">
 {% for dependency in dependent_packages %}
 <tr><td>
 {% if not dependency.startswith("...") %}<a href="/package/{{ dependency }}">{{ dependency }}</a>
@@ -48,12 +52,16 @@ None
 </table>
 {% endif %}
 </td></tr><tr><td>
-<b>Last Crawled</b>: {{ last_update }}
+{% if len(scm) > 0 %}
+<b>SCM Data</b>:
+<table class="subtable">
+<tr><td>type</td><td>{{ scm[0][1].capitalize() }} (<a href={{scm[0][2]}}>link</a>)</td></tr>
+<tr><td># of open issues</td><td>{{ scm[0][3] }}</td></tr>
+<tr><td>last update</td><td>{{ scm[0][4].split("T")[0] }} ({{ get_days_since(scm[0][4].split("T")[0]) }} days ago)</td></tr>
+</tr>
+</table>
 </td></tr><tr><td>
-<b>Rank</b>: {{ rank }}
-</td></tr><tr><td>
-<b>Author</b>: <a href="/author/{{author}}">{{ author }}</a>
-</td></tr><tr><td>
+{% endif %}
 <b>Release History</b>:
 <table class="subtable">
 <thead>
@@ -67,16 +75,8 @@ None
 </tr>
 {% endfor %}
 </table>
-{% if len(scm) > 0 %}
-<br>
-<b>SCM Data</b>:
-<table class="subtable">
-<tr><td>type</td><td>{{ scm[0][1].capitalize() }} (<a href={{scm[0][2]}}>link</a>)</td></tr>
-<tr><td># of open issues</td><td>{{ scm[0][3] }}</td></tr>
-<tr><td>last update</td><td>{{ scm[0][4].split("T")[0] }}</td></tr>
-</tr>
-</table>
-{% endif %}
+</td></tr><tr><td>
+<br><b>Last Crawled</b>: {{ last_update }}
 </td></tr></table>
 </body>
 </html>

@@ -8,20 +8,27 @@ import datetime
 import threading
 import itertools
 import sqlite3
+from collections import OrderedDict
 
 SQLITE_FILE = "pypi.sqlite"
 
-TABLE_VALUES = dict(name="TEXT UNIQUE NOT NULL PRIMARY KEY",
-    downloads_total="INTEGER",
-    downloads_month="INTEGER",
-    downloads_week="INTEGER",
-    downloads_day="INTEGER",
-    python3="INTEGER",
-    author="TEXT",
-    crawl_time="REAL",
-    summary="TEXT",
-    homepage="TEXT",
-    latest_sdist="TEXT")
+TABLE_VALUES = OrderedDict([("name", "TEXT UNIQUE NOT NULL PRIMARY KEY"),
+                            ("downloads_total", "INTEGER"),
+                            ("downloads_month", "INTEGER"),
+                            ("downloads_week", "INTEGER"),
+                            ("downloads_day", "INTEGER"),
+                            ("python3", "INTEGER"),
+                            ("author", "TEXT"),
+                            ("crawl_time", "REAL"),
+                            ("summary", "TEXT"),
+                            ("homepage", "TEXT"),
+                            ("latest_sdist", "TEXT"),])
+
+
+parse_count = preloaded = 0
+timer_close_event = None
+timer_thread = None
+
 
 def parse_releases(package_json):
     releases = package_json["releases"]
@@ -34,6 +41,7 @@ def parse_releases(package_json):
         res.append([release, release_date, release_downloads])
     return res, total_downloads
 
+
 def get_latest_sdist(package_json):
     from itertools_recipes import flatten
     urls = flatten(package_json["releases"].values())
@@ -42,6 +50,7 @@ def get_latest_sdist(package_json):
         return sorted(sdist_urls, key=lambda u: u["upload_time"], reverse=True)[0]["url"]
     except:
         return None
+
 
 def per_package(package):
     try:
@@ -52,21 +61,19 @@ def per_package(package):
         downloads["total"] = total_downloads
         python3 = "Python :: 3" in "".join(d["info"]["classifiers"])
         return dict(downloads=downloads,
-            python3=python3,
-            author=d["info"]["author"],
-            crawl_time=time.time(),
-            release_history=release_history,
-            summary=d["info"]["summary"],
-            homepage=d["info"]["home_page"],
-            latest_sdist=latest_sdist)
+                    python3=python3,
+                    author=d["info"]["author"],
+                    crawl_time=time.time(),
+                    release_history=release_history,
+                    summary=d["info"]["summary"],
+                    homepage=d["info"]["home_page"],
+                    latest_sdist=latest_sdist)
     except ValueError:
         return None
     except Exception as e:
         print "ERROR", package, e
         return None
 
-parse_count = preloaded = 0
-dependency_data = dict()
 
 def progress(crawl_type, crawl_count, total_count, timer_close_event):
     start_time = time.time()
@@ -89,6 +96,21 @@ def progress(crawl_type, crawl_count, total_count, timer_close_event):
     output("finished")
     print
 
+
+def start_progress(crawl_type, crawl_count, total_count):
+    global timer_thread
+    global timer_close_event
+    timer_close_event = threading.Event()
+    timer_thread = threading.Thread(target=progress, args=(crawl_type, crawl_count, total_count, timer_close_event))
+    timer_thread.daemon = True
+    timer_thread.start()
+
+
+def stop_progress():
+    timer_close_event.set()
+    timer_thread.join()
+
+
 def save_package_data(conn, package, package_data):
     data_to_insert = dict(name=package)
     if package_data is not None:
@@ -100,26 +122,28 @@ def save_package_data(conn, package, package_data):
         package_data["python3"] = 1 if package_data.pop("python3") else 0
         for release in package_data.pop("release_history"):
             conn.execute("REPLACE INTO versions (package, version, upload_time, downloads) VALUES (?, ?, ?, ?)",
-                [package] + release)
+                         [package] + release)
         data_to_insert.update(package_data)
     conn.execute(u"REPLACE INTO packages ({}) VALUES ({})".format(", ".join(data_to_insert.keys()),
-        ("?," * len(data_to_insert))[:-1]), data_to_insert.values())
+                 ("?," * len(data_to_insert))[:-1]), data_to_insert.values())
     conn.commit()
 
+
 def get_conn():
-    import sqlite3
-    if os.path.exists(SQLITE_FILE):
-        conn = sqlite3.Connection(SQLITE_FILE)
+    path = os.path.abspath(os.path.join(os.path.dirname(__file__), SQLITE_FILE))
+    if os.path.exists(path):
+        conn = sqlite3.Connection(path)
     else:
-        conn = sqlite3.Connection(SQLITE_FILE)
+        conn = sqlite3.Connection(path)
         conn.execute("CREATE TABLE packages ({})".format(", ".join([" ".join(item) for item in TABLE_VALUES.items()])))
         conn.execute("CREATE TABLE versions(package TEXT, version TEXT, upload_time TEXT, downloads INTEGER, "
-            "CONSTRAINT u1 UNIQUE (package, version))")
+                     "CONSTRAINT u1 UNIQUE (package, version))")
         conn.execute("CREATE TABLE dependencies(name TEXT, raw_dependencies TEXT, dependency TEXT, crawl_time REAL, "
-            "CONSTRAINT u2 UNIQUE (name, raw_dependencies), CONSTRAINT u3 UNIQUE (name, dependency))")
+                     "CONSTRAINT u2 UNIQUE (name, raw_dependencies), CONSTRAINT u3 UNIQUE (name, dependency))")
         conn.execute("CREATE TABLE scm(name TEXT UNIQUE NOT NULL PRIMARY KEY, "
-            "type TEXT, url TEXT, open_issues INTEGER, last_change TEXT, crawl_time REAL)")
+                     "type TEXT, url TEXT, open_issues INTEGER, last_change TEXT, crawl_time REAL)")
     return conn
+
 
 def remove_deleted_packages(conn, packages_in_db, packages_in_pypi):
     for package in (set(packages_in_db) - set(packages_in_pypi)):
@@ -129,7 +153,8 @@ def remove_deleted_packages(conn, packages_in_db, packages_in_pypi):
         conn.execute("DELETE FROM scm WHERE name=?", (package,))
     conn.commit()
 
-def crawl(conn, crawl_count):
+
+def crawl(conn, crawl_count, new_only=False):
     global parse_count
     global preloaded
     parse_count = preloaded = 0
@@ -139,28 +164,31 @@ def crawl(conn, crawl_count):
     packages = client.list_packages()
     remove_deleted_packages(conn, existing_packages, packages)
     total_count = len(packages)
-    timer_close_event = threading.Event()
-    timer_thread = threading.Thread(target=progress, args=("packages", crawl_count, total_count, timer_close_event))
-    timer_thread.daemon = True
-    timer_thread.start()
+    start_progress("packages", crawl_count, total_count)
     for package in packages:
         parse_count += 1
         # for the first crawl skip the packages that we already know of. Only the second crawl onward will replace data
-        if crawl_count == 1 and package in existing_packages:
+        if new_only and package in existing_packages:
             preloaded += 1
             continue
         package_data = per_package(package)
         save_package_data(conn, package, package_data)
-    timer_close_event.set()
-    timer_thread.join()
+    stop_progress()
+
 
 def crawl_forever(crawler_ready_event=None):
+    from github import crawl as github_crawl
+    from dependency_crawler.dependency_crawler import crawl as dependency_crawl
     conn = get_conn()
     if crawler_ready_event:
         crawler_ready_event.set()
     for crawl_count in itertools.count(1):
-        crawl(conn, crawl_count)
+        crawl(conn, crawl_count, new_only=(crawl_count == 1))
+        if crawl_count > 1:
+            github_crawl(conn, crawl_count)
+        #dependency_crawl(conn, crawl_count, new_only=(crawl_count % 10 != 0))
         time.sleep(60 * 60 * 24)
+
 
 if __name__ == '__main__':
     crawl_forever()

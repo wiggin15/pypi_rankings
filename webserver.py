@@ -9,10 +9,12 @@ app = Flask(__name__)
 
 conn = None
 
+
 def get_downloads_data(download_key="downloads_total"):
     d = list(conn.execute("SELECT name, {0}, python3 FROM packages "
                           "WHERE {0} IS NOT NULL ORDER BY {0} DESC".format(download_key)))
     return [(rank, package, download_count, py3) for (rank, (package, download_count, py3)) in enumerate(d, 1)]
+
 
 def get_dependency_data():
     res = list(conn.execute("SELECT dependency, COUNT(name) FROM dependencies "
@@ -21,6 +23,7 @@ def get_dependency_data():
         return next(conn.execute("SELECT python3 FROM packages WHERE name=?", (package_name,))) == 1
     return [(rank, package, depdendency_count, lookup_py3(package))
             for (rank, (package, depdendency_count)) in enumerate(res, 1)]
+
 
 def get_author_data():
     res = list(conn.execute("SELECT author, COUNT(author) FROM packages "
@@ -34,37 +37,50 @@ def format_time(timestr):
         return "N/A"
     return timestr.replace("T", ' ').replace('-', '/')
 
+
 def format_data_for_table(data, data_type="package"):
     draw = int(request.args.get('draw'))
     start = int(request.args.get('start'))
     count = int(request.args.get('length'))
     search = request.args.get('search[value]')
     format_package = lambda key: u'<a href="/{0}/{1}">{1}</a>'.format(data_type, key)
-    format_py3 = lambda py3: '<img src="/static/three.png" class="three_icon">' if py3 else ''
+    format_py3 = lambda py3: '<div class="three noselect">3</div>' if py3 else ''
     format_value = lambda dc: "{:,d}".format(dc)
     filtered_data = [(rank, format_package(package), format_value(value), format_py3(py3))
                      for (rank, package, value, py3) in data if search.lower() in package.lower()]
     final_data = filtered_data[start:start+count]
     return jsonify(dict(data=final_data, draw=draw, recordsTotal=len(data), recordsFiltered=len(filtered_data)))
 
+
 @app.route('/downloads_total')
 def downloads_total():
     return format_data_for_table(get_downloads_data("downloads_total"))
+
+
 @app.route('/downloads_monthly')
 def downloads_monthly():
     return format_data_for_table(get_downloads_data("downloads_month"))
+
+
 @app.route('/downloads_weekly')
 def downloads_weekly():
     return format_data_for_table(get_downloads_data("downloads_week"))
+
+
 @app.route('/downloads_daily')
 def downloads_daily():
     return format_data_for_table(get_downloads_data("downloads_day"))
+
+
 @app.route('/dependencies')
 def dependencies():
     return format_data_for_table(get_dependency_data())
+
+
 @app.route('/authors')
 def authors():
     return format_data_for_table(get_author_data(), "author")
+
 
 @app.route("/more_stats")
 def more_stats():
@@ -74,17 +90,18 @@ def more_stats():
         count = next(conn.execute("SELECT COUNT(*) FROM packages WHERE LOWER(homepage) LIKE ?", (scm_url_pattern,)))[0]
         scm.append((scm_name, count))
     scm.sort(key=lambda x: x[1], reverse=True)
-    len_py3 = [x[0] for x in conn.execute("SELECT python3 FROM packages")].count(True)
+    len_py3 = next(conn.execute("SELECT COUNT(*) FROM packages WHERE python3=1"))[0]
     authors_len = next(conn.execute("SELECT COUNT(DISTINCT author) FROM packages"))[0]
-    no_releases = len(list(conn.execute("SELECT homepage FROM packages WHERE homepage IS NULL")))
-    no_downloads = [x[0] for x in conn.execute("SELECT downloads_total FROM packages")].count(0)
+    no_releases = next(conn.execute("SELECT COUNT(*) FROM packages WHERE homepage IS NULL"))[0]
+    no_downloads = next(conn.execute("SELECT COUNT(*) FROM packages WHERE downloads_total=0"))[0]
     dependency_data = next(conn.execute("SELECT count(*) FROM dependencies WHERE raw_dependencies IS NOT NULL"))[0]
     total_len = next(conn.execute("SELECT COUNT(*) FROM packages"))[0]
     no_sdist = next(conn.execute("SELECT COUNT(*) FROM packages WHERE latest_sdist IS NULL"))[0]
     len_scm = next(conn.execute("SELECT COUNT(*) FROM scm"))[0]
     return render_template("more_stats.html", scm=scm, len_py3=len_py3, total_len=total_len, no_sdist=no_sdist,
-        no_releases=no_releases, no_downloads=no_downloads, dependency_data=dependency_data,
-        len_scm=len_scm, authors_len=authors_len)
+                           no_releases=no_releases, no_downloads=no_downloads, dependency_data=dependency_data,
+                           len_scm=len_scm, authors_len=authors_len)
+
 
 @app.route('/package/<package_name>')
 def package(package_name):
@@ -111,11 +128,15 @@ def package(package_name):
             res[10] = "... {} more".format(len(res) - 10)
             res = res[:11]
         return res
+    def get_days_since(date_str):
+        return (datetime.datetime.now().date() - datetime.datetime.strptime(date_str, "%Y-%m-%d").date()).days
     return render_template("package.html",
-        last_update=last_update, rank=rank, format_time=format_time,
-        has_dependency_data=has_dependency_data, dependencies=dependencies, dependent_packages=dependent_packages(),
-        len=len, release_history=versions, scm=scm,
-        **package_data)
+                           last_update=last_update, rank=rank, format_time=format_time,
+                           has_dependency_data=has_dependency_data, dependencies=dependencies,
+                           dependent_packages=dependent_packages(), len=len,
+                           release_history=versions, scm=scm, get_days_since=get_days_since,
+                           **package_data)
+
 
 @app.route('/author/<author_name>')
 def author(author_name):
@@ -123,6 +144,7 @@ def author(author_name):
     packages = [x[0] for x in packages]
     rank = [rank for rank, author, _, _ in get_author_data() if author==author_name][0]
     return render_template("author.html", author_name=author_name, rank=rank, packages=packages, len=len)
+
 
 @app.route('/')
 def index():
@@ -134,6 +156,7 @@ def index():
         )
     return render_template("index.html", **kwargs)
 
+
 def main():
     global conn
     crawler_ready = threading.Event()
@@ -143,6 +166,7 @@ def main():
     crawler_ready.wait()
     conn = sqlite3.connect(pypi_crawler.SQLITE_FILE)
     app.run(host="0.0.0.0", debug=True, use_reloader=False)
+
 
 if __name__ == '__main__':
     main()
