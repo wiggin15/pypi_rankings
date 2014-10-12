@@ -1,5 +1,4 @@
 import requests
-import json
 import time
 import re
 import pypi_crawler
@@ -34,20 +33,18 @@ def get_github_list(conn):
     return [(repo, url) for repo, url in res if url is not None]
 
 
-def build_url(start, github_list):
+def build_url(current_list):
     url = "https://api.github.com/search/repositories?per_page=100&q="
-    repo_count = 0
-    for name, repo in github_list[start:start+MAX_REPOS]:
+    for name, repo in current_list:
         # we add a \n after each repo to break the url. If it's too and not broken into lines it will be rejected
         url += "repo:{}\n".format(repo)
-        repo_count += 1
-    return repo_count, url
+    return url
 
 
-def save_data(conn, github_json, github_list, start, repo_count):
+def save_data(conn, github_json, current_list):
     for github_repo_info in github_json["items"]:
         repo_part = github_repo_info["html_url"].split("github.com/")[-1]
-        package_name = [name for name, repo in github_list[start:start+repo_count+1]
+        package_name = [name for name, repo in current_list
                         if repo.lower() == repo_part.lower()]
         if len(package_name) == 0:
             continue
@@ -63,7 +60,7 @@ def save_data(conn, github_json, github_list, start, repo_count):
 
 def get_rate_limit():
     url = "https://api.github.com/rate_limit"
-    return json.loads(requests.get(url, auth=AUTH).text)["resources"]["search"]["remaining"]
+    return requests.get(url, auth=AUTH).json()["resources"]["search"]["remaining"]
 
 
 def crawl(conn, crawl_count=1):
@@ -74,11 +71,12 @@ def crawl(conn, crawl_count=1):
     total_count = len(github_list)
     pypi_crawler.start_progress("github", crawl_count, total_count)
     while start < total_count:
-        repo_count, url = build_url(start, github_list)
-        github_response = requests.get(url, auth=AUTH).text
-        github_json = json.loads(github_response)
+        current_list = github_list[start:start+MAX_REPOS]
+        repo_count = len(current_list)
+        url = build_url(current_list)
+        github_json = requests.get(url, auth=AUTH).json()
         if "items" in github_json:
-            save_data(conn, github_json, github_list, start, repo_count)
+            save_data(conn, github_json, current_list)
         #    print len(github_json["items"])
         #else:
         #    print github_json

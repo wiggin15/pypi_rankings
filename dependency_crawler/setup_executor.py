@@ -27,8 +27,12 @@ with mock.patch.object(setuptools, "setup", setup_mock), \
      mock.patch.object(os, "system"), \
      mock.patch.object(os, "rename"), \
      mock.patch.object(os, "remove"), \
+     mock.patch.object(os, "mkdir"), \
+     mock.patch.object(os, "makedirs"), \
      mock.patch.object(shutil, "rmtree"), \
      mock.patch.object(shutil, "move"), \
+     mock.patch.object(shutil, "copy"), \
+     mock.patch.object(shutil, "copyfile"), \
      mock.patch.object(subprocess, "Popen"):
         execfile("setup.py")
 

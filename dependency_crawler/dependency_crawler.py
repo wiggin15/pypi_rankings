@@ -15,13 +15,15 @@ import pypi_crawler
 def extract_tar(fname):
     if fname.endswith("gz"):
         tfile = tarfile.open(fname, 'r:gz')
-        names = set([tfname.lstrip("./").split("/")[0] for tfname in tfile.getnames()])
+        names = tfile.getnames()
     elif fname.endswith(".zip"):
         tfile = zipfile.ZipFile(fname)
-        names = set([tfname.lstrip("./").split("/")[0] for tfname in tfile.namelist()])
+        names = tfile.namelist()
     else:
         return
-    if len(names) > 1:
+    dirnames = set([tfname.lstrip("./").split("/")[0] for tfname in names])
+    nodirs = all('/' not in name for name in names)
+    if len(dirnames) > 1 or nodirs:
         os.mkdir("package_dir")
         tfile.extractall("package_dir")
     else:

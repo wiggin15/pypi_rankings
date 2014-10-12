@@ -1,6 +1,5 @@
 from infi.pypi_manager import PyPI
 import requests
-import json
 import os
 import sys
 import time
@@ -54,7 +53,7 @@ def get_latest_sdist(package_json):
 
 def per_package(package):
     try:
-        d = json.loads(requests.get("https://pypi.python.org/pypi/{}/json".format(package)).text)
+        d = requests.get("https://pypi.python.org/pypi/{}/json".format(package)).json()
         downloads = d["info"]["downloads"]
         release_history, total_downloads = parse_releases(d)
         latest_sdist = get_latest_sdist(d)
@@ -176,9 +175,17 @@ def crawl(conn, crawl_count, new_only=False):
     stop_progress()
 
 
+def do_dependency_crawl(conn, crawl_count):
+    from dependency_crawler.dependency_crawler import crawl as dependency_crawl
+    from multiprocessing import Process
+    new_only = (crawl_count % 10 != 0)
+    proc = Process(target=dependency_crawl, args=(conn, crawl_count, new_only))
+    proc.start()
+    proc.join()
+
+
 def crawl_forever(crawler_ready_event=None):
     from github import crawl as github_crawl
-    from dependency_crawler.dependency_crawler import crawl as dependency_crawl
     conn = get_conn()
     if crawler_ready_event:
         crawler_ready_event.set()
@@ -186,7 +193,7 @@ def crawl_forever(crawler_ready_event=None):
         crawl(conn, crawl_count, new_only=(crawl_count == 1))
         if crawl_count > 1:
             github_crawl(conn, crawl_count)
-        #dependency_crawl(conn, crawl_count, new_only=(crawl_count % 10 != 0))
+        do_dependency_crawl(conn, crawl_count)
         time.sleep(60 * 60 * 24)
 
 
