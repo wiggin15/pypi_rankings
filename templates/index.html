@@ -36,6 +36,7 @@ $(document).ready(function() {
         }
     });
     table = $('#main_table').DataTable( {
+        columns: [{ "width": "10%" },{ "width": "70%" },{ "width": "10%" },{ "width": "10%" }],
         sort: false,
         serverSide: true,
         {% if length %}pageLength: {{ length }},{% endif %}

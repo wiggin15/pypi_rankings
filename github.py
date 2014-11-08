@@ -4,7 +4,7 @@ import re
 import pypi_crawler
 
 
-MAX_REPOS = 100     # we never want to fetch more than 100 repos at a time because github doesn't allows more per page
+MAX_REPOS = 100     # we never want to fetch more than 100 repos at a time because github doesn't allow more per page
 AUTH = None         # to crawl faster, this can be a tuple of (username, password) of a github user
 
 
@@ -15,6 +15,7 @@ def cleanup_url(url):
         if not matchobj:
             return None
         url = "/".join(matchobj.groups())
+    url = url.replace("github.org", "github.com")
     url = url.split("github.com/")[-1]
     url = url.split("#")[0]
     if url.endswith("/"):
@@ -36,7 +37,7 @@ def get_github_list(conn):
 def build_url(current_list):
     url = "https://api.github.com/search/repositories?per_page=100&q="
     for name, repo in current_list:
-        # we add a \n after each repo to break the url. If it's too and not broken into lines it will be rejected
+        # we add a \n after each repo to break the url. If it's too long and not broken into lines it will be rejected
         url += "repo:{}\n".format(repo)
     return url
 

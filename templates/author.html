@@ -24,7 +24,10 @@
 <b>Packages by this author</b>:
 <table class="subtable">
 {% for package in packages %}
-<tr><td><a href="/package/{{package}}">{{ package }}</a></td></tr>
+<tr><td>
+<a href="/package/{{package}}">{{ package[0] }}</a>
+<br><div class="package-description">{{ package[1] }}</div>
+</td></tr>
 {% endfor %}
 </table>
 </td></tr></table>

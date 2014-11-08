@@ -11,25 +11,25 @@ conn = None
 
 
 def get_downloads_data(download_key="downloads_total"):
-    d = list(conn.execute("SELECT name, {0}, python3 FROM packages "
-                          "WHERE {0} IS NOT NULL ORDER BY {0} DESC".format(download_key)))
-    return [(rank, package, download_count, py3) for (rank, (package, download_count, py3)) in enumerate(d, 1)]
+    res = conn.execute("SELECT name, summary, {0}, python3 FROM packages "
+                       "WHERE {0} IS NOT NULL ORDER BY {0} DESC".format(download_key))
+    for rank, (package, summary, download_count, py3) in enumerate(res, 1):
+        yield rank, package, summary, download_count, py3
 
 
 def get_dependency_data():
-    res = list(conn.execute("SELECT dependency, COUNT(name) FROM dependencies "
-                            "WHERE dependency IS NOT NULL GROUP BY dependency ORDER BY COUNT(name) DESC"))
-    def lookup_py3(package_name):
-        return next(conn.execute("SELECT python3 FROM packages WHERE name=?", (package_name,))) == 1
-    return [(rank, package, depdendency_count, lookup_py3(package))
-            for (rank, (package, depdendency_count)) in enumerate(res, 1)]
+    res = conn.execute("SELECT dependency, COUNT(name) FROM dependencies "
+                       "WHERE dependency IS NOT NULL GROUP BY dependency ORDER BY COUNT(name) DESC")
+    for rank, (package, depdendency_count) in enumerate(res, 1):
+        summary, py3 = list(next(conn.execute("SELECT summary, python3 FROM packages WHERE name=?", (package,))))
+        yield rank, package, summary, depdendency_count, py3
 
 
 def get_author_data():
-    res = list(conn.execute("SELECT author, COUNT(author) FROM packages "
-                            "WHERE author NOT IN ('', 'UNKNOWN', 'AUTHOR') "
-                            "GROUP BY author ORDER BY COUNT(author) DESC"))
-    return [(rank, author, package_count, False) for (rank, (author, package_count)) in enumerate(res, 1)]
+    res = conn.execute("SELECT author, COUNT(author) FROM packages "
+                       "WHERE author NOT IN ('', 'UNKNOWN', 'AUTHOR') "
+                       "GROUP BY author ORDER BY COUNT(author) DESC")
+    return [(rank, author, '', package_count, False) for (rank, (author, package_count)) in enumerate(res, 1)]
 
 
 def format_time(timestr):
@@ -39,15 +39,17 @@ def format_time(timestr):
 
 
 def format_data_for_table(data, data_type="package"):
+    data = list(data)
     draw = int(request.args.get('draw'))
     start = int(request.args.get('start'))
     count = int(request.args.get('length'))
     search = request.args.get('search[value]')
-    format_package = lambda key: u'<a href="/{0}/{1}">{1}</a>'.format(data_type, key)
+    format_package = lambda key, desc: u'<a href="/{0}/{1}">{1}</a>'.format(data_type, key) + \
+                                       u'<br><div class="package-description">{0}</div>'.format(desc)
     format_py3 = lambda py3: '<div class="three noselect">3</div>' if py3 else ''
     format_value = lambda dc: "{:,d}".format(dc)
-    filtered_data = [(rank, format_package(package), format_value(value), format_py3(py3))
-                     for (rank, package, value, py3) in data if search.lower() in package.lower()]
+    filtered_data = [(rank, format_package(package, summary), format_value(value), format_py3(py3))
+                     for (rank, package, summary, value, py3) in data if search.lower() in package.lower()]
     final_data = filtered_data[start:start+count]
     return jsonify(dict(data=final_data, draw=draw, recordsTotal=len(data), recordsFiltered=len(filtered_data)))
 
@@ -86,7 +88,8 @@ def authors():
 def more_stats():
     scm = list()
     for scm_name, scm_url_pattern in [("Github", "%github.%"), ("Sourceforge", "%sourceforge.net%"),
-                                      ("Google Code", "%code.google.com%"), ("Bitbucket", "%bitbucket%")]:
+                                      ("Google Code", "%code.google.com%"), ("Bitbucket", "%bitbucket.%"),
+                                      ("Plone", "%plone.org%")]:
         count = next(conn.execute("SELECT COUNT(*) FROM packages WHERE LOWER(homepage) LIKE ?", (scm_url_pattern,)))[0]
         scm.append((scm_name, count))
     scm.sort(key=lambda x: x[1], reverse=True)
@@ -112,7 +115,7 @@ def package(package_name):
     package_data = dict(zip(pypi_crawler.TABLE_VALUES.keys(), package_data))
     versions = list(conn.execute("SELECT * FROM versions WHERE package=? "
                                  "ORDER BY upload_time DESC, version DESC", (package_name,)))
-    rank = [rank for rank, package, _, _ in get_downloads_data() if package==package_name][0]
+    rank = [rank for rank, package, _, _, _ in get_downloads_data() if package==package_name][0]
     last_update = datetime.datetime.fromtimestamp(package_data["crawl_time"]).ctime()
     dependencies = list(conn.execute("SELECT dependency FROM dependencies "
                                      "WHERE dependency IS NOT NULL AND name=?", (package_name,)))
@@ -140,9 +143,8 @@ def package(package_name):
 
 @app.route('/author/<author_name>')
 def author(author_name):
-    packages = list(conn.execute("SELECT name FROM packages WHERE author=?", (author_name,)))
-    packages = [x[0] for x in packages]
-    rank = [rank for rank, author, _, _ in get_author_data() if author==author_name][0]
+    packages = list(conn.execute("SELECT name, summary FROM packages WHERE author=?", (author_name,)))
+    rank = [rank for rank, author, _, _, _ in get_author_data() if author==author_name][0]
     return render_template("author.html", author_name=author_name, rank=rank, packages=packages, len=len)
 
 

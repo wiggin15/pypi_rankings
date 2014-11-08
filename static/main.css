@@ -11,12 +11,7 @@ table.dataTable {
   clear: both;
   border-collapse: separate;
   border-spacing: 0;
-  /*
-   * Header and footer styles
-   */
-  /*
-   * Body styles
-   */
+  table-layout: fixed;
 }
 table.dataTable thead th,
 table.dataTable tfoot th {
@@ -416,7 +411,7 @@ table.dataTable td {
 
 #main_table thead th:nth-child(2),
 #main_table tbody tr td:nth-child(2) {
-  padding-left: 100px;
+  padding-left: 18px;
   text-align: left;
 }
 
@@ -454,6 +449,7 @@ border-bottom-left-radius:0px;
 border-bottom-right-radius:0px;
 border-top-right-radius:0px;
 border-top-left-radius:0px;
+table-layout: fixed;
 }
 .subtable table{
 width:100%;
@@ -493,4 +489,10 @@ text-align: left;
   -moz-user-select: none;
   -ms-user-select: none;
   user-select: none;
+}
+
+.package-description {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
