@@ -443,7 +443,7 @@ width:100%;
 .subtable {
 margin:0px;padding:0px;
 margin-top: 5px;
-width:60%;
+width:75%;
 border:1px solid #93a1a1;
 border-bottom-left-radius:0px;
 border-bottom-right-radius:0px;
@@ -465,6 +465,23 @@ padding:7px;
 .subtable th {
 border:1px solid #93a1a1;
 text-align: left;
+}
+
+.release-table {
+  width: 55%;
+  table-layout: auto;
+  white-space: nowrap;
+}
+
+.release-table tbody tr td:first-child,
+.release-table thead tr th:first-child {
+  width: 20%;
+}
+
+.release-table tbody tr td:last-child,
+.release-table thead tr th:last-child,
+.scm-table tbody tr td:first-child {
+  width: 30%;
 }
 
 .three {

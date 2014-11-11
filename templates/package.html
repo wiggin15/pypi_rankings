@@ -15,17 +15,17 @@
 </div>
 <table class="package">
 <tr><td>
-<b>Package Name</b>: {{ name }} (<a href="http://pypi.python.org/pypi/{{ name }}">Show in PyPI</a>)
+<b>Package Name</b>:<br><blockquote>{{ name }} (<a href="http://pypi.python.org/pypi/{{ name }}">Show in PyPI</a>)</blockquote>
 </td></tr><tr><td>
-<b>Description</b>: {{ summary }}
+<b>Description</b>:<br><blockquote>{{ summary }}</blockquote>
 </td></tr><tr><td>
-<b>Downlods Total</b>: {{ "{:,d}".format(downloads_total) }}
+<b>Downlods Total</b>:<br><blockquote>{{ "{:,d}".format(downloads_total) }}</blockquote>
 </td></tr><tr><td>
-<b>Rank</b>: {{ rank }}
+<b>Rank</b>:<br><blockquote>{{ rank }}</blockquote>
 </td></tr><tr><td>
-<b>Author</b>: <a href="/author/{{author}}">{{ author }}</a>
+<b>Author</b>:<br><blockquote><a href="/author/{{author}}">{{ author }}</a></blockquote>
 </td></tr><tr><td>
-<b>Packages {{ name }} depends on</b>:
+<b>Packages {{ name }} depends on</b>:<br><blockquote>
 {% if not has_dependency_data %}
 N/A
 {% elif len(dependencies) == 0 %}
@@ -34,12 +34,12 @@ None
 <table class="subtable">
 {% for dependency in dependencies %}
 <tr><td><a href="/package/{{ dependency[0] }}">{{ dependency[0] }}</a>
-<br><div class="package-summary">{{ dependency[1] }}</div></td></tr>
+<br><div class="package-description">{{ dependency[1] }}</div></td></tr>
 {% endfor %}
-</table>
+</table></blockquote>
 {% endif %}
 </td></tr><tr><td>
-<b>Packages that depend on {{ name }}</b>:
+<b>Packages that depend on {{ name }}</b>:<br><blockquote>
 {% if len(dependent_packages) == 0 %}
 None
 {% else %}
@@ -53,20 +53,20 @@ None
 </td></tr>
 {% endfor %}
 </table>
-{% endif %}
+{% endif %}</blockquote>
 </td></tr><tr><td>
 {% if len(scm) > 0 %}
-<b>SCM Data</b>:
-<table class="subtable">
+<b>SCM Data</b>:<br><blockquote>
+<table class="subtable scm-table">
 <tr><td>type</td><td>{{ scm[0][1].capitalize() }} (<a href={{scm[0][2]}}>link</a>)</td></tr>
 <tr><td># of open issues</td><td>{{ scm[0][3] }}</td></tr>
 <tr><td>last update</td><td>{{ scm[0][4].split("T")[0] }} ({{ get_days_since(scm[0][4].split("T")[0]) }} days ago)</td></tr>
 </tr>
-</table>
+</table></blockquote>
 </td></tr><tr><td>
 {% endif %}
-<b>Release History</b>:
-<table class="subtable">
+<b>Release History</b>:<br><blockquote>
+<table class="subtable release-table">
 <thead>
 <th>Release</th>
 <th>Upload Time</th>
@@ -77,9 +77,9 @@ None
 <td>{{ release[1] }}</td><td>{{ format_time(release[2]) }}</td><td>{{ "{:,d}".format(release[3]) }}</td>
 </tr>
 {% endfor %}
-</table>
+</table></blockquote>
 </td></tr><tr><td>
-<br><b>Last Crawled</b>: {{ last_update }}
+<br><b>Last Crawled</b>:<br><blockquote>{{ last_update }}</blockquote>
 </td></tr></table>
 </body>
 </html>

@@ -15,21 +15,21 @@
 </div>
 <table class="package">
 <tr><td>
-<b>Author Name</b>: {{ author_name }}
+<b>Author Name</b>:<br><blockquote>{{ author_name }}</blockquote>
 </td></tr><tr><td>
-<b>Packages Authored</b>: {{ "{:,d}".format(len(packages)) }}
+<b>Packages Authored</b>:<br><blockquote>{{ "{:,d}".format(len(packages)) }}</blockquote>
 </td></tr><tr><td>
-<b>Rank</b>: {{ rank }}
+<b>Rank</b>:<br><blockquote>{{ rank }}</blockquote>
 </td></tr><tr><td>
-<b>Packages by this author</b>:
+<b>Packages by this author</b>:<br><blockquote>
 <table class="subtable">
 {% for package in packages %}
 <tr><td>
-<a href="/package/{{package}}">{{ package[0] }}</a>
+<a href="/package/{{package[0]}}">{{ package[0] }}</a>
 <br><div class="package-description">{{ package[1] }}</div>
 </td></tr>
 {% endfor %}
-</table>
+</table></blockquote>
 </td></tr></table>
 </body>
 </html>
