@@ -117,18 +117,20 @@ def package(package_name):
                                  "ORDER BY upload_time DESC, version DESC", (package_name,)))
     rank = [rank for rank, package, _, _, _ in get_downloads_data() if package==package_name][0]
     last_update = datetime.datetime.fromtimestamp(package_data["crawl_time"]).ctime()
-    dependencies = list(conn.execute("SELECT dependency FROM dependencies "
-                                     "WHERE dependency IS NOT NULL AND name=?", (package_name,)))
-    dependencies = [x[0] for x in dependencies]
+    dependencies = list(conn.execute("SELECT dependencies.dependency, packages.summary "
+                                     "FROM dependencies JOIN packages ON packages.name=dependencies.dependency "
+                                     "WHERE dependencies.dependency IS NOT NULL "
+                                     "AND dependencies.name=?", (package_name,)))
     has_dependency_data = len(list(conn.execute("SELECT raw_dependencies FROM dependencies "
                                                 "WHERE name=? AND raw_dependencies IS NOT NULL", (package_name,)))) > 0
     show_all_packages = bool(request.args.get('show_all'))
     scm = list(conn.execute("SELECT * FROM scm WHERE name=?", (package_name,)))
     def dependent_packages():
-        res = list(conn.execute("SELECT name FROM dependencies WHERE dependency=?", (package_name,)))
-        res = [x[0] for x in res]
+        res = list(conn.execute("SELECT dependencies.name, packages.summary "
+                                "FROM dependencies JOIN packages ON packages.name=dependencies.name "
+                                "WHERE dependencies.dependency=?", (package_name,)))
         if len(res) > 10 and not show_all_packages:
-            res[10] = "... {} more".format(len(res) - 10)
+            res[10] = ("... {} more".format(len(res) - 10), None)
             res = res[:11]
         return res
     def get_days_since(date_str):

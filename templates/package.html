@@ -33,7 +33,8 @@ None
 {% else %}
 <table class="subtable">
 {% for dependency in dependencies %}
-<tr><td><a href="/package/{{ dependency }}">{{ dependency }}</a></td></tr>
+<tr><td><a href="/package/{{ dependency[0] }}">{{ dependency[0] }}</a>
+<br><div class="package-summary">{{ dependency[1] }}</div></td></tr>
 {% endfor %}
 </table>
 {% endif %}
@@ -45,8 +46,10 @@ None
 <table class="subtable">
 {% for dependency in dependent_packages %}
 <tr><td>
-{% if not dependency.startswith("...") %}<a href="/package/{{ dependency }}">{{ dependency }}</a>
-{% else %}<a href="/package/{{name}}?show_all=True">{{ dependency }}</a>{% endif %}
+{% if not dependency[0].startswith("...") %}
+<a href="/package/{{ dependency[0] }}">{{ dependency[0] }}</a>
+<br><div class="package-description">{{ dependency[1] }}</div>
+{% else %}<a href="/package/{{name}}?show_all=True">{{ dependency[0] }}</a>{% endif %}
 </td></tr>
 {% endfor %}
 </table>
