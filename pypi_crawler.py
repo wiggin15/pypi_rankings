@@ -186,6 +186,7 @@ def do_dependency_crawl(conn, crawl_count):
 
 def crawl_forever(crawler_ready_event=None):
     from github import crawl as github_crawl
+    from bitbucket import crawl as bitbucket_crawl
     conn = get_conn()
     if crawler_ready_event:
         crawler_ready_event.set()
@@ -193,6 +194,8 @@ def crawl_forever(crawler_ready_event=None):
         crawl(conn, crawl_count, new_only=(crawl_count == 1))
         if crawl_count > 1:
             github_crawl(conn, crawl_count)
+        if crawl_count % 2 == 1:
+            bitbucket_crawl(conn, crawl_count)
         do_dependency_crawl(conn, crawl_count)
         time.sleep(60 * 60 * 24)
 

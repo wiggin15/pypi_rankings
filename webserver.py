@@ -89,7 +89,7 @@ def more_stats():
     scm = list()
     for scm_name, scm_url_pattern in [("Github", "%github.%"), ("Sourceforge", "%sourceforge.net%"),
                                       ("Google Code", "%code.google.com%"), ("Bitbucket", "%bitbucket.%"),
-                                      ("Plone", "%plone.org%")]:
+                                      ("Plone", "%plone.org%"), ("Launchpad", "%launchpad.net%")]:
         count = next(conn.execute("SELECT COUNT(*) FROM packages WHERE LOWER(homepage) LIKE ?", (scm_url_pattern,)))[0]
         scm.append((scm_name, count))
     scm.sort(key=lambda x: x[1], reverse=True)

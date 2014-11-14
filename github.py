@@ -10,16 +10,19 @@ AUTH = None         # to crawl faster, this can be a tuple of (username, passwor
 
 def cleanup_url(url):
     url = url.lower()
-    if 'github.io' in url:
-        matchobj = re.search("([^/.]+)\.github\.io/(.*)", url)
-        if not matchobj:
-            return None
-        url = "/".join(matchobj.groups())
+    url = url.replace("github.com:", "github.com/")
+    url = url.replace("github.io", "github.com")
     url = url.replace("github.org", "github.com")
+    url = url.split("://")[-1]
+    url = url.split("www.")[-1]
+    if not url.startswith("github.com"):
+        # {user}.github.com/{repo} instead of github.com/{user}/{repo}
+        matchobj = re.search("([^/.]+)\.github\.com/(.+)", url)
+        if matchobj:
+            url = "/".join(matchobj.groups())
     url = url.split("github.com/")[-1]
     url = url.split("#")[0]
-    if url.endswith("/"):
-        url = url[:-1]
+    url = url.rstrip("/")
     if url.endswith(".git"):
         url = url[:-4]
     url = "/".join(url.split("/")[:2])
