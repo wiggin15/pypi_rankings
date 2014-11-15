@@ -3,6 +3,7 @@ import json
 import shutil
 import tarfile
 import zipfile
+import tempfile
 import time
 from urllib import urlretrieve
 from infi.execute import execute_assert_success
@@ -28,23 +29,23 @@ def extract_tar(fname):
 
 
 def get_dependencies(url):
-    global required
-    fname, _ = urlretrieve(url)
+    tmpdir = tempfile.mkdtemp()
     try:
-        extract_tar(fname)
-        old_dir = os.getcwd()
-        new_dirs = [d for d in os.listdir(".") if os.path.isdir(d)]
-        shutil.copy("setup_executor.py", new_dirs[0])
-        os.chdir(new_dirs[0])
+        os.chdir(tmpdir)
+        fname, _ = urlretrieve(url)
         try:
+            extract_tar(fname)
+            new_dirs = [d for d in os.listdir(".") if os.path.isdir(d)]
+            setup_executor = os.path.join(os.path.dirname(__file__), "setup_executor.py")
+            shutil.copy(setup_executor, new_dirs[0])
+            os.chdir(new_dirs[0])
             output = execute_assert_success(["python", "setup_executor.py"], timeout=60*5).get_stdout().strip()
             res = eval(output.splitlines()[-1])
             return res
         finally:
-            os.chdir(old_dir)
-            [shutil.rmtree(d) for d in new_dirs]
+            os.remove(fname)
     finally:
-        os.remove(fname)
+         shutil.rmtree(tmpdir)
 
 
 def per_package(package, url):
