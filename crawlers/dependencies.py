@@ -1,15 +1,12 @@
 import os
 import json
-import threading
 import shutil
 import tarfile
 import zipfile
 import time
 from urllib import urlretrieve
 from infi.execute import execute_assert_success
-import sys
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir)))
-import pypi_crawler
+from progress import Progress
 
 
 def extract_tar(fname):
@@ -76,7 +73,6 @@ def save_package_data(conn, package, dependencies, real_package_lookup):
 
 
 def crawl(conn, crawl_count=1, new_only=True):
-    pypi_crawler.parse_count = 0
     all_packages = set(x[0] for x in conn.execute("SELECT name FROM packages"))
     real_package_lookup = dict((package_name.lower(), package_name) for package_name in all_packages)
     package_query = "SELECT name, latest_sdist FROM packages WHERE latest_sdist IS NOT NULL"
@@ -84,14 +80,16 @@ def crawl(conn, crawl_count=1, new_only=True):
         package_query += " AND name NOT IN (SELECT DISTINCT name FROM dependencies)"
     packages = list(conn.execute(package_query))
     total_count = len(packages)
-    pypi_crawler.start_progress("dependencies", crawl_count, total_count)
+    progress = Progress("dependencies", crawl_count, total_count)
+    progress.start()
     for package, url in packages:
-        pypi_crawler.parse_count += 1
+        progress.parse_count += 1
         dependencies = per_package(package, url)
         save_package_data(conn, package, dependencies, real_package_lookup)
-    pypi_crawler.stop_progress()
+    progress.stop()
 
 
 if __name__ == '__main__':
-    conn = pypi_crawler.get_conn()
+    from . import get_conn
+    conn = get_conn()
     crawl(conn, new_only=False)

@@ -1,13 +1,12 @@
 from flask import Flask, render_template, jsonify, request, abort
 import datetime
 import time
-import threading
-import pypi_crawler
 import sqlite3
+from crawlers import start_crawlers, get_conn, TABLE_VALUES
 
 app = Flask(__name__)
 
-conn = None
+conn = get_conn()
 
 
 def get_downloads_data(download_key="downloads_total"):
@@ -112,7 +111,7 @@ def package(package_name):
         package_data = next(conn.execute("SELECT * FROM packages WHERE name=?", (package_name,)))
     except StopIteration:
         abort(404)
-    package_data = dict(zip(pypi_crawler.TABLE_VALUES.keys(), package_data))
+    package_data = dict(zip(TABLE_VALUES.keys(), package_data))
     versions = list(conn.execute("SELECT * FROM versions WHERE package=? "
                                  "ORDER BY upload_time DESC, version DESC", (package_name,)))
     rank = [rank for rank, package, _, _, _ in get_downloads_data() if package==package_name][0]
@@ -162,13 +161,7 @@ def index():
 
 
 def main():
-    global conn
-    crawler_ready = threading.Event()
-    crawl_thread = threading.Thread(target=pypi_crawler.crawl_forever, args=(crawler_ready,))
-    crawl_thread.daemon = True
-    crawl_thread.start()
-    crawler_ready.wait()
-    conn = sqlite3.connect(pypi_crawler.SQLITE_FILE)
+    start_crawlers()
     app.run(host="0.0.0.0", debug=True, use_reloader=False)
 
 

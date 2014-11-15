@@ -1,7 +1,7 @@
 import requests
 import time
 import re
-import pypi_crawler
+from progress import Progress
 
 
 MAX_REPOS = 100     # we never want to fetch more than 100 repos at a time because github doesn't allow more per page
@@ -68,12 +68,12 @@ def get_rate_limit():
 
 
 def crawl(conn, crawl_count=1):
-    pypi_crawler.parse_count = 0
     github_list = get_github_list(conn)
     start = 0
     rate_limit = get_rate_limit()
     total_count = len(github_list)
-    pypi_crawler.start_progress("github", crawl_count, total_count)
+    progress = Progress("github", crawl_count, total_count)
+    progress.start()
     while start < total_count:
         current_list = github_list[start:start+MAX_REPOS]
         repo_count = len(current_list)
@@ -84,15 +84,16 @@ def crawl(conn, crawl_count=1):
         #    print len(github_json["items"])
         #else:
         #    print github_json
-        pypi_crawler.parse_count += repo_count
+        progress.parse_count += repo_count
         rate_limit -= 1
         while rate_limit <= 0:
             time.sleep(5)
             rate_limit = get_rate_limit()
         start += repo_count
-    pypi_crawler.stop_progress()
+    progress.stop()
 
 
 if __name__ == '__main__':
-    conn = pypi_crawler.get_conn()
+    from . import get_conn
+    conn = get_conn()
     crawl(conn)

@@ -1,7 +1,6 @@
 import requests
 import time
-import re
-import pypi_crawler
+from progress import Progress
 
 
 def cleanup_url(url):
@@ -36,11 +35,10 @@ def save_data(conn, package_name, data_dict):
 
 
 def crawl(conn, crawl_count=1):
-    pypi_crawler.parse_count = 0
     bitbucket_list = get_bitbucket_list(conn)
-    start = 0
     total_count = len(bitbucket_list)
-    pypi_crawler.start_progress("bitbucket", crawl_count, total_count)
+    progress = Progress("bitbucket", crawl_count, total_count)
+    progress.start()
     for package_name, bitbucket_uri in bitbucket_list:
         try:
             url = "https://api.bitbucket.org/2.0/repositories/{}"
@@ -54,12 +52,13 @@ def crawl(conn, crawl_count=1):
                 html_url=meta_info["links"]["html"]["href"],
                 pushed_at=meta_info["updated_on"],
                 scm_type="Bitbucket - {}".format(meta_info["scm"])))
-        except Exception as e:
+        except:
             pass
-        pypi_crawler.parse_count += 1
-    pypi_crawler.stop_progress()
+        progress.parse_count += 1
+    progress.stop()
 
 
 if __name__ == "__main__":
-    conn = pypi_crawler.get_conn()
+    from . import get_conn
+    conn = get_conn()
     crawl(conn)
