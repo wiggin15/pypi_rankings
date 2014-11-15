@@ -1,7 +1,5 @@
 from flask import Flask, render_template, jsonify, request, abort
 import datetime
-import time
-import sqlite3
 from crawlers import start_crawlers, get_conn, TABLE_VALUES
 
 app = Flask(__name__)
@@ -145,7 +143,10 @@ def package(package_name):
 @app.route('/author/<author_name>')
 def author(author_name):
     packages = list(conn.execute("SELECT name, summary FROM packages WHERE author=?", (author_name,)))
-    rank = [rank for rank, author, _, _, _ in get_author_data() if author==author_name][0]
+    rank = [rank for rank, author, _, _, _ in get_author_data() if author==author_name]
+    if len(rank) == 0:
+        abort(404)
+    rank = rank[0]
     return render_template("author.html", author_name=author_name, rank=rank, packages=packages, len=len)
 
 
