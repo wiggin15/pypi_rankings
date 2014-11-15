@@ -5,9 +5,14 @@ import tarfile
 import zipfile
 import tempfile
 import time
+import multiprocessing
 from urllib import urlretrieve
 from infi.execute import execute_assert_success
 from progress import Progress
+
+# number of processes to run in parallel to get dependencies. 1 process ends in ~13 hours.
+# 5 and 10 produce ~7 hour crawl, and 20 processes ended in ~10 hours, so no need to try to raise the count.
+PROCESS_COUNT = 5
 
 
 def extract_tar(fname):
@@ -50,7 +55,7 @@ def get_dependencies(url):
 
 def per_package(package, url):
     try:
-        return get_dependencies(url)
+        return package, get_dependencies(url)
     except (IndexError, ValueError):
         return None
     except Exception as e:
@@ -83,10 +88,24 @@ def crawl(conn, crawl_count=1, new_only=True):
     total_count = len(packages)
     progress = Progress("dependencies", crawl_count, total_count)
     progress.start()
+    mutex = multiprocessing.Lock()
+    def package_callback(result):
+        from . import get_conn
+        mutex.acquire()
+        try:
+            progress.parse_count += 1
+            if result is None:
+                return
+            package, dependencies = result
+            conn = get_conn()    # we're a different thread, so we can't use 'conn' from the parent scope
+            save_package_data(conn, package, dependencies, real_package_lookup)
+        finally:
+            mutex.release()
+    pool = multiprocessing.Pool(PROCESS_COUNT)
     for package, url in packages:
-        progress.parse_count += 1
-        dependencies = per_package(package, url)
-        save_package_data(conn, package, dependencies, real_package_lookup)
+        pool.apply_async(per_package, args=(package, url), callback=package_callback)
+    pool.close()
+    pool.join()
     progress.stop()
 
 
