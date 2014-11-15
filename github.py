@@ -86,9 +86,8 @@ def crawl(conn, crawl_count=1):
         #    print github_json
         pypi_crawler.parse_count += repo_count
         rate_limit -= 1
-        if rate_limit <= 0:
-            #print "sleeping"
-            time.sleep(65)
+        while rate_limit <= 0:
+            time.sleep(5)
             rate_limit = get_rate_limit()
         start += repo_count
     pypi_crawler.stop_progress()
