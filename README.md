@@ -5,6 +5,7 @@ Data collected includes:
 * author
 * dependencies
 * source control data, if the package is hosted on Github or Bitbucket.
+
 The information is displayed via a web page which ranks the packages by different categories (e.g. the package
 with the most downloads, the most dependencies, etc.), and the user can search for packages and navigate the ranking
 tables. The web page also contains views for every package and author with additional information.
@@ -16,8 +17,8 @@ Screenshot
 Usage
 =====
 After cloning this repository, run:
-* python setup.py install
-* start_pypi_rankings
+* `python setup.py install`
+* `start_pypi_rankings`
 
 This script opens a web server on the running machine, on port 5000. You can open the browser and navigate to
 http://localhost:5000
