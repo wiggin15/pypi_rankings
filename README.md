@@ -19,12 +19,13 @@ Usage
 * Install by running `easy_install pypi_rankings`
 * Start by running `start_pypi_rankings`
 
-This script opens a web server on the running machine, on port 5000. You can open the browser and navigate to
-http://localhost:5000
+This script starts collecting data, and opens a web server on the running machine, on port 5000.
+You can open a browser and navigate to http://localhost:5000
 
-* Note: crawling may take a while... The crawling process includes multiple crawl processes - one collects metadata,
-another collects dependency data, and more... Initial crawl may take around 20 hours or more, but there is progress
-indication, with very rough time estimation.
+* Note: crawling may take a while... The process of collecting the data includes multiple crawl steps - one
+collects metadata, another collects dependency data, and more...
+Initial crawl may take around 20 hours or more. When crawling, progress indication is shown, with (very rough)
+time estimation.
 
 * Warning: As part of the dependency crawling process, this script
 tries to run the `setup.py` file from all packages on PyPI, which may affect the filesystem on the running machine.
