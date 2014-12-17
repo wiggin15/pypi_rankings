@@ -16,9 +16,8 @@ Screenshot
 
 Usage
 =====
-After cloning this repository, run:
-* `python setup.py install`
-* `start_pypi_rankings`
+* Install by running `easy_install pypi_rankings`
+* Start by running `start_pypi_rankings`
 
 This script opens a web server on the running machine, on port 5000. You can open the browser and navigate to
 http://localhost:5000
@@ -30,3 +29,10 @@ indication, with very rough time estimation.
 * Warning: As part of the dependency crawling process, this script
 tries to run the `setup.py` file from all packages on PyPI, which may affect the filesystem on the running machine.
 It is highly recommended to run this script in a virtual environment (a VM) and not on your personal computer.
+
+Development
+===========
+To install this package from source and for development purposes, clone this repository and run the following:
+* `easy_install infi.projector`
+* `projector devenv build`
+These commands will retrieve the project dependencies and create the command line script that runs the current source.
