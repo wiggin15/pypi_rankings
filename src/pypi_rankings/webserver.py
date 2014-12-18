@@ -1,8 +1,12 @@
-from flask import Flask, render_template, jsonify, request, abort
+import pkg_resources
 import datetime
+from flask import Flask, render_template, jsonify, request, abort
 from crawlers import start_crawlers, get_conn, TABLE_VALUES
 
-app = Flask(__name__)
+TEMPLATE_FOLDER = pkg_resources.resource_filename('pypi_rankings', 'templates')
+STATIC_FOLDER = pkg_resources.resource_filename('pypi_rankings', 'static')
+
+app = Flask(__name__, static_folder=STATIC_FOLDER, template_folder=TEMPLATE_FOLDER)
 
 conn = get_conn()
 
