@@ -50,6 +50,8 @@ def crawl_forever():
     from .pypi import crawl as pypi_crawl
     from .github import crawl as github_crawl
     from .bitbucket import crawl as bitbucket_crawl
+    import requests
+    requests.packages.urllib3.disable_warnings()
     conn = get_conn()
     for crawl_count in itertools.count(1):
         pypi_crawl(conn, crawl_count, new_only=(crawl_count == 1))
