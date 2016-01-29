@@ -77,6 +77,7 @@ def remove_deleted_packages(conn, packages_in_db, packages_in_pypi):
 
 
 def crawl(conn, crawl_count=1, new_only=False):
+    requests.packages.urllib3.disable_warnings()
     existing_packages = set([x[0] for x in list(conn.execute("SELECT name FROM packages"))])
     client = PyPI()._client
     packages = client.list_packages()
