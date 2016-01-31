@@ -57,10 +57,10 @@ def per_package(package, url):
     try:
         return package, get_dependencies(url)
     except (IndexError, ValueError):
-        return None
+        return package, None
     except Exception as e:
         #print "ERROR", package, e
-        return None
+        return package, None
 
 
 def save_package_data(conn, package, dependencies, real_package_lookup):
@@ -94,8 +94,6 @@ def crawl(conn, crawl_count=1, new_only=True):
         mutex.acquire()
         try:
             progress.parse_count += 1
-            if result is None:
-                return
             package, dependencies = result
             conn = get_conn()    # we're a different thread, so we can't use 'conn' from the parent scope
             save_package_data(conn, package, dependencies, real_package_lookup)
