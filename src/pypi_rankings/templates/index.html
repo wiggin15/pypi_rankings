@@ -31,8 +31,6 @@ $(document).ready(function() {
             spinnerFactory.block(settings.oInstance, "huge");
         } else {
             settings.oInstance.unblock();
-            // TODO processing=True gets called twice on init for some reason, so we unblock twice...
-            settings.oInstance.unblock();
         }
     });
     table = $('#main_table').DataTable( {

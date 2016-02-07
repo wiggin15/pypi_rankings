@@ -277,10 +277,6 @@
 			themedCSS = $.extend({}, $.blockUI.defaults.themedCSS, opts.themedCSS || {});
 			msg = msg === undefined ? opts.message : msg;
 
-			// remove the current block (if there is one)
-			if (full && pageBlock)
-				remove(window, {fadeOut:0});
-
 			// if an existing element is being used as the blocking content then we capture
 			// its current place in the DOM (and current display style) so we can restore
 			// it when we unblock
@@ -483,6 +479,7 @@
                 var blockCount = $(el).data('blockUI.blockCount');
                 if (blockCount == undefined) blockCount = 0;
                 else blockCount--;
+                if (blockCount < 0) blockCount = 0;
                 $(el).data('blockUI.blockCount', blockCount);
                 if (blockCount > 0)
                     return;

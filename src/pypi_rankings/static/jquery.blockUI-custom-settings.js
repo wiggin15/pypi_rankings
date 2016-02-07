@@ -7,4 +7,4 @@ jQuery.blockUI.defaults.css.cursor = "default";
 jQuery.blockUI.defaults.overlayCSS.cursor = "default";
 jQuery.blockUI.defaults.overlayCSS.backgroundColor = "#fff";
 jQuery.blockUI.defaults.overlayCSS.opacity = 0.4;
-jQuery.blockUI.defaults.blockCounting = true;
+jQuery.blockUI.defaults.blockCounting = false;
